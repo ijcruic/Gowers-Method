@@ -46,7 +46,8 @@ weight desired for that variable. Finally, graph construction can be  unspecifie
 Weighted Consensus Graph.
 
 ### Output
-
+Output of the method will be the graph adjacency in a Pandas data frame, where the index and columns are the data names. 
 
 ## References
-* 
+* Campedelli GM, Cruickshank I, Carley KM (2018) Complex Networks for Terrorist Target Prediction. 
+In:Thomson R, Dancy C, Hyder A, Bisgin H (eds) Social, Cultural, and Behavioral Modeling, vol 10899, SpringerInternational Publishing, Cham, pp 348–353
