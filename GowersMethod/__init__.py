@@ -1,1 +1,1 @@
-name = "gowers_method"
+name = "GowersMethod"
