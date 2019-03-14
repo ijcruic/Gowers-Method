@@ -2,7 +2,7 @@
 Gowers Method for finding latent networks of multi-modal data
 
 ## Overview
-This project contaisn the code for Gower's Method, which is a method latent networks of multi-modal data. In this context, multi-modal or multi-view data, is data which
+This project contains the code for Gower's Method, which is a method for finding latent networks of multi-modal data. In this context, multi-modal or multi-view data, is data which
 has more than one mode of measurement. As a result, we employ Gower's Coefficient of Similarity combined with weighting by network entropy to find latent positions
 of points, which we then learn a 'best-fit' graph to those points.
 
