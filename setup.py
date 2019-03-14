@@ -19,6 +19,9 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        
+        'networkx>=2.2',
+        'numpy>=1.15.4',
+        'python-louvain>=0.11',
+        'pandas>=0.23.4'
     ]
 )
