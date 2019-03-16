@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="GowersMethod",
+    name="Gowers_Method",
     version="1.0.1",
     author="Iain J. Cruickshank",
     author_email="icruicks@andrew.cmu.edu",
