@@ -8,7 +8,8 @@ acknowledgements: Work supported by National Science Foundation Graduate Researc
 """
 
 import pandas as pd, networkx as nx, community
-from Gowers_Method import data_operations, graph_computation
+from Gowers_Method.data_operations import data_operations
+from Gowers_Method.graph_computation import graph_computation
 
 class latent_graph:
     """Finds a latent graph of data using Gower's method and specified graph constructor
