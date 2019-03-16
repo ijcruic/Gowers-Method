@@ -28,11 +28,12 @@ The general usage of the code follows the format of:
 The following code details an example
 
 ```python
-from Gowers_Method import latent_graph as lg
+from Gowers_Method import latent_graph
 
 mode_files = ['Mode_1.csv', 'Mode_2.csv', 'Mode_3.csv']
 
 if __name__ == "__main__":
+    lg = latent_graph()
     lg.load_data_from_file(mode_files)
     network = lg.learn_graph()
 ```
