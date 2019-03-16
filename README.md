@@ -15,7 +15,7 @@ Options available in this package include:
 
 To install the package, you can use pip's built-in functionality  with:
 ```python
-pip install git+https://github.com/ijcruic/Gowers-Method#egg=GowersMethod
+pip install git+https://github.com/ijcruic/Gowers-Method#egg=Gowers_Method
 ```
 
 ## Usage
@@ -28,12 +28,11 @@ The general usage of the code follows the format of:
 The following code details an example
 
 ```python
-import GowersMethod as GM
+from Gowers_Method import latent_graph as lg
 
 mode_files = ['Mode_1.csv', 'Mode_2.csv', 'Mode_3.csv']
 
 if __name__ == "__main__":
-    lg = GM.latent_graph()
     lg.load_data_from_file(mode_files)
     network = lg.learn_graph()
 ```
