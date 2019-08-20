@@ -22,6 +22,7 @@ setuptools.setup(
         'networkx>=2.2',
         'numpy>=1.15.4',
         'python-louvain>=0.11',
-        'pandas>=0.23.4'
+        'pandas>=0.23.4',
+        'sklearn>=0.1'
     ]
 )

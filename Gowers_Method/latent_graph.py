@@ -48,10 +48,11 @@ class latent_graph:
     """
     
     def __init__(self, gowers_scheme='entropy', construction_method='modularity', 
-                 epsilon =0.01):
+                 epsilon =0.1, network_enhancement=True):
         self.gowers_scheme = gowers_scheme
         self.epsilon = epsilon
         self.construction_method = construction_method
+        self.network_enhancement = network_enhancement
         self.network = None
         
     def return_data_matrix(self):
@@ -173,7 +174,8 @@ class latent_graph:
             adjacency matrix of the latent network
         """
         
-        computation = graph_computation(self.gowers_scheme, self.epsilon, self.construction_method)        
+        computation = graph_computation(self.gowers_scheme, self.epsilon, self.construction_method,
+                                        self.network_enhancement)        
         if self.network == None:
             self.X = computation.compute_similarity(self.raw_data)
             raw_network = computation.compute_graph(self.X)

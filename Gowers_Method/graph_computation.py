@@ -7,7 +7,8 @@ license: MIT version 3
 acknowledgements: Work supported by National Science Foundation Graduate Research Fellowship (DGE 1745016).   
 """
 
-import numpy as np, networkx as nx, community, multiprocessing as mp
+import numpy as np, networkx as nx, community
+from sklearn.preprocessing import normalize
 
 class graph_computation:
     """Core class that handles simialrity calculations and graph learning
@@ -26,6 +27,9 @@ class graph_computation:
         the type of graph construction method to use. Current implemented options
         are the modularity k-NN, denoted as 'modularity' which is the default and the
         weighted consensus graph which is denoted as 'WCG'.
+    network_enhancement: boolean, optional
+        wether to perform the diffusion process known as Network Enhancement 
+        following fitting an approxiamate graph to the data.
         
     Methods
     -------
@@ -37,10 +41,12 @@ class graph_computation:
         matrix, A.
     """
     
-    def __init__(self, gowers_scheme='entropy', epsilon=0.1, construction_method='modularity'):
+    def __init__(self, gowers_scheme='entropy', epsilon=0.1, construction_method='modularity',
+                 network_enhancement=True):
         self.gowers_scheme = gowers_scheme
         self.epsilon = epsilon
         self.construction_method = construction_method
+        self.network_enhancement = network_enhancement
     
     
     def compute_similarity(self, m):
@@ -117,29 +123,28 @@ class graph_computation:
         
     
     def compute_graph(self, A):
-        N = A.shape[0]
-
         if self.construction_method == 'WCG':
-            idxs = []
-            for i in range(N):
-                nonzero_entries = np.nonzero(A[i,:])[0]
-                sorted_nonzero_idxs = np.argsort(A[i,nonzero_entries])
-                idxs.append(nonzero_entries[sorted_nonzero_idxs])
-                
-            with mp.Pool(processes=6) as pool:
-                graphs = np.array(pool.starmap(self._weighted_consensus_graph, [(int(k), idxs, A) for k in np.floor(np.logspace(0.1,0.9,num=20,base=N))]))
-            C = np.sum(graphs, axis=0)
-            
-            degree = np.sum(C, axis=1)
-            D= degree[:, np.newaxis] 
-            return np.divide(C, D, out=np.zeros_like(C), where=D!=0)
+            final_graph = self._weighted_consensus_graph(A)
         else:
-            return self._kNN_modularity(A)
+            final_graph= self._kNN_modularity(A)
+            
+        if self.network_enhancement:
+            return self._network_enhancement(final_graph)
+        else:
+            return final_graph
         
     
-    def _weighted_consensus_graph(self, k, idxs, A):
+    def _weighted_consensus_graph(self, A):
         N = A.shape[0]
         C = np.zeros((N,N))
+        k = np.floor(0.4*N)
+        
+        idxs = []
+        for i in range(N):
+            nonzero_entries = np.nonzero(A[i,:])[0]
+            sorted_nonzero_idxs = np.argsort(A[i,nonzero_entries])
+            idxs.append(nonzero_entries[sorted_nonzero_idxs])
+        
         for u in range(N):
             neighbors = idxs[u][0:k]
             for v in range(N):
@@ -154,7 +159,7 @@ class graph_computation:
                             C[w,v] += edge_prob
                             C[v,w] += edge_prob
         
-        return C
+        return normalize(C, norm='l1', axis=1, copy=False)
     
     
     def _kNN_modularity(self, A):
@@ -190,3 +195,45 @@ class graph_computation:
 
         print("The modularity of the best learned graph was: {}, at a k-value of: {}".format(best_modularity, best_k))
         return nx.to_numpy_array(best_network)
+    
+    
+    def _network_enhancement(self, full_graph):
+        T=20
+        alpha=0.9
+        nearest_neighbors=10
+
+        Q = normalize(full_graph, norm='l1', axis=1, copy=False)
+        N = Q.shape[0]
+        idxs = np.flip(np.argsort(Q, axis=1), axis=1)[:,1:nearest_neighbors+1]
+        graph = np.zeros((N,N))
+        graph[np.arange(N)[:,None], idxs] = Q[np.arange(N)[:,None], idxs]
+        graph = normalize(graph, norm='l1', axis=1, copy=False)
+        
+        dsm = np.zeros((N,N))
+        col_sums= np.sum(graph, axis=0)
+        for i in range(graph.shape[0]):
+            for j in range(graph.shape[1]):
+                dsm[i,j] = np.sum(np.divide((graph[i,:] * graph[j,:]), col_sums,
+                   out = np.zeros_like(col_sums), where=col_sums!=0))
+                
+        for t in range(T+1):
+            Q = alpha*np.matmul(np.matmul(dsm, Q), dsm.T) + (1-alpha)*dsm
+        Q.setdiag(0)
+        
+        return Q
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
