@@ -218,7 +218,7 @@ class graph_computation:
                 
         for t in range(T+1):
             Q = alpha*np.matmul(np.matmul(dsm, Q), dsm.T) + (1-alpha)*dsm
-        Q.setdiag(0)
+        np.fill_diagonal(Q, 0)
         
         return Q
         
