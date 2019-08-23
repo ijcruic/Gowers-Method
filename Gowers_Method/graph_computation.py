@@ -202,7 +202,7 @@ class graph_computation:
         alpha=0.9
         nearest_neighbors=10
 
-        Q = normalize(full_graph, norm='l1', axis=1, copy=False)
+        Q = np.minimum(full_graph, full_graph.T)
         N = Q.shape[0]
         idxs = np.flip(np.argsort(Q, axis=1), axis=1)[:,1:nearest_neighbors+1]
         graph = np.zeros((N,N))
@@ -217,7 +217,7 @@ class graph_computation:
                    out = np.zeros_like(col_sums), where=col_sums!=0))
                 
         for t in range(T+1):
-            Q = alpha*np.matmul(np.matmul(dsm, Q), dsm.T) + (1-alpha)*dsm
+            Q = alpha*np.matmul(np.matmul(dsm, Q), dsm) + (1-alpha)*dsm
         np.fill_diagonal(Q, 0)
         
         return Q
