@@ -6,7 +6,7 @@ Created on Mon Sep  9 13:05:52 2019
 """
 import numpy as np
 
-class thermodynamic_metrics:
+class thermodynamic_measures:
     """Toolkit for computing various graph thermodynamic measures for a given graph
     
     Attributes
