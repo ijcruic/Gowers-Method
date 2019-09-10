@@ -21,13 +21,20 @@ class latent_graph:
         for no weights. Pass a list of custom weights for using custom weights;
         note the length of the list must be the same as the number of columns across
         all modes of the data.
-    epsilon : float, optional
-        specify the threshold for not including edges in the weighted_consensus_graph.
-        default is 0.01
     construction_method : str, optional
         the type of graph construction method to use. Current implemented options
         are the modularity k-NN, denoted as 'modularity' which is the default and the
         weighted consensus graph which is denoted as 'WCG'.
+    WCG_epsilon : float, optional
+        specify the threshold for not including edges in the weighted_consensus_graph.
+        default is 0.01
+    knn_symmetrize : boolean, optional
+        determine wether you want to use symmetric (link exists only if it is mutual)
+        or assymetric kNNs (link exists if it is present in any direction) for the kNN modualrity
+        method. Default is assymetric.
+    network_enhancement: boolean, optional
+        wether to perform the diffusion process known as Network Enhancement 
+        following fitting an approxiamate graph to the data.
         
     Methods
     -------
@@ -48,11 +55,16 @@ class latent_graph:
     """
     
     def __init__(self, gowers_scheme='entropy', construction_method='modularity', 
-                 epsilon =0.1, network_enhancement=True):
+                 WCG_epsilon =0.1, knn_symmetrize= False, network_enhancement=True, enhancement_iterations=100, 
+                 enhancement_alpha=0.9, enhancement_nearest_neighbors='sqrt'):
         self.gowers_scheme = gowers_scheme
-        self.epsilon = epsilon
+        self.epsilon = WCG_epsilon
+        self.symmetrize = knn_symmetrize
         self.construction_method = construction_method
         self.network_enhancement = network_enhancement
+        self.T = enhancement_iterations
+        self.alpha = enhancement_alpha
+        self.nearest_neighbors = enhancement_nearest_neighbors
         self.network = None
         
     def return_data_matrix(self):
@@ -174,8 +186,10 @@ class latent_graph:
             adjacency matrix of the latent network
         """
         
-        computation = graph_computation(self.gowers_scheme, self.epsilon, self.construction_method,
-                                        self.network_enhancement)        
+        computation = graph_computation(self.gowers_scheme, self.construction_method, 
+                                        self.epsilon, self.symmetrize, 
+                                        self.network_enhancement, self.T, self.alpha, 
+                                        self.nearest_neighbors)        
         if self.network == None:
             self.X = computation.compute_similarity(self.raw_data)
             raw_network = computation.compute_graph(self.X)

@@ -9,6 +9,7 @@ acknowledgements: Work supported by National Science Foundation Graduate Researc
 
 import numpy as np, networkx as nx, community
 from sklearn.preprocessing import normalize
+from sklearn.neighbors import NearestNeighbors
 
 class graph_computation:
     """Core class that handles simialrity calculations and graph learning
@@ -20,13 +21,17 @@ class graph_computation:
         for no weights. Pass a list of custom weights for using custom weights;
         note the length of the list must be the same as the number of columns across
         all modes of the data.
-    epsilon : float, optional
-        specify the threshold for not including edges in the weighted_consensus_graph.
-        default is 0.01
     construction_method : str, optional
         the type of graph construction method to use. Current implemented options
         are the modularity k-NN, denoted as 'modularity' which is the default and the
         weighted consensus graph which is denoted as 'WCG'.
+    WCG_epsilon : float, optional
+        specify the threshold for not including edges in the weighted_consensus_graph.
+        default is 0.01
+    knn_symmetrize : boolean, optional
+        determine wether you want to use symmetric (link exists only if it is mutual)
+        or assymetric kNNs (link exists if it is present in any direction) for the kNN modualrity
+        method. Default is assymetric.
     network_enhancement: boolean, optional
         wether to perform the diffusion process known as Network Enhancement 
         following fitting an approxiamate graph to the data.
@@ -41,12 +46,17 @@ class graph_computation:
         matrix, A.
     """
     
-    def __init__(self, gowers_scheme='entropy', epsilon=0.1, construction_method='modularity',
-                 network_enhancement=True):
+    def __init__(self, gowers_scheme, construction_method, 
+                 WCG_epsilon, knn_symmetrize, network_enhancement, enhancement_iterations, 
+                 enhancement_alpha, enhancement_nearest_neighbors):
         self.gowers_scheme = gowers_scheme
-        self.epsilon = epsilon
+        self.epsilon = WCG_epsilon
+        self.symmetrize = knn_symmetrize
         self.construction_method = construction_method
         self.network_enhancement = network_enhancement
+        self.T = enhancement_iterations
+        self.alpha = enhancement_alpha
+        self.nearest_neighbors = enhancement_nearest_neighbors
     
     
     def compute_similarity(self, m):
@@ -167,20 +177,17 @@ class graph_computation:
         best_network = nx.Graph()
         best_k =2
         distances = 1-A
-        np.fill_diagonal(distances, np.infty)
+        distances[distances < 1e-10] =0
     
         for n in range(1, np.int(np.floor(np.log2(distances.shape[0])))):
             k = 2**n
-            nodes = np.argpartition(distances, k)[:,:k]
-            edges = []
-            for i in range(nodes.shape[0]):
-                for j in nodes[i,:]:
-                    edges.append((i,j))
-                    
-            network = nx.DiGraph()
-            network.add_nodes_from(nodes[:,0])
-            network.add_edges_from(edges)
-            network = network.to_undirected(reciprocal=False)
+            nbrs = NearestNeighbors(n_neighbors=k, metric='precomputed').fit(distances)
+            adjacency = nbrs.kneighbors_graph(distances)
+            if self.symmetrize:
+                adjacency = adjacency.minimum(adjacency.T)
+            else:
+                adjacency = adjacency.maximum(adjacency.T)
+            network = nx.from_scipy_sparse_matrix(adjacency)
             S = network.number_of_nodes()
             p = nx.density(network)
             
@@ -198,11 +205,12 @@ class graph_computation:
     
     
     def _network_enhancement(self, full_graph):
-        T=20
-        alpha=0.9
-        nearest_neighbors=10
+        if self.nearest_neighbors == 'sqrt':
+            nearest_neighbors = int(np.ceil(np.sqrt(full_graph.shape[0])))
+        else:
+            nearest_neighbors = self.nearest_neighbors
 
-        Q = np.minimum(full_graph, full_graph.T)
+        Q = normalize(full_graph, norm='l1', axis=1, copy=False)
         N = Q.shape[0]
         idxs = np.flip(np.argsort(Q, axis=1), axis=1)[:,1:nearest_neighbors+1]
         graph = np.zeros((N,N))
@@ -216,9 +224,10 @@ class graph_computation:
                 dsm[i,j] = np.sum(np.divide((graph[i,:] * graph[j,:]), col_sums,
                    out = np.zeros_like(col_sums), where=col_sums!=0))
                 
-        for t in range(T+1):
-            Q = alpha*np.matmul(np.matmul(dsm, Q), dsm) + (1-alpha)*dsm
+        for t in range(self.T+1):
+            Q = self.alpha*np.matmul(np.matmul(dsm, Q), dsm.T) + (1-self.alpha)*dsm
         np.fill_diagonal(Q, 0)
+        Q[Q<np.mean(Q)] = 0
         
         return Q
         

@@ -10,19 +10,6 @@ acknowledgements: Work supported by National Science Foundation Graduate Researc
 import pandas as pd, numpy as np
 
 class data_operations:
-    """Helper class to read-in and format data for Gower's Method
-    
-    Attributes
-    ----------
-    None
-        
-    Methods
-    -------
-    load_data_from_file(data, remove_non_distinguishing=False)
-        Read in raw data from a filename or list of file names
-    load_data_from_memory(data, remove_non_distinguishing=False)
-        Read in raw data already in memory and convert to the format expected by the methods
-    """
     
     def __init__(self):
         pass
@@ -37,6 +24,17 @@ class data_operations:
     
     def load_data_from_file(self, path, data_type='bipartite', 
                             remove_non_distinguishing=False):
+        """Load in data from a list of paths
+    
+        Parameters
+        ----------
+        path : the list of paths to the files containing the different modes of the data
+        
+        Returns
+        -------
+        m : 
+        """
+        
         if data_type == 'bipartite':
             data = self._load_incidence_from_file(path, remove_non_distinguishing)
             return np.array(data), data.index.to_series()
