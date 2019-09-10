@@ -28,7 +28,7 @@ The general usage of the code follows the format of:
 The following code details an example
 
 ```python
-from gowers_method import latent_graph
+from Gowers_Method import latent_graph
 
 mode_files = ['Mode_1.csv', 'Mode_2.csv', 'Mode_3.csv']
 
