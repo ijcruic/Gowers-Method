@@ -1,4 +1,4 @@
-name = "Gowers_Method"
+name = "gowers_method"
 
 from .latent_graph import latent_graph
 from .data_operations import data_operations

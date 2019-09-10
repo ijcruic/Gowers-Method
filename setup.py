@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="Gowers_Method",
-    version="1.4.0",
+    name="gowers_method",
+    version="1.4.1",
     author="Iain J. Cruickshank",
     author_email="icruicks@andrew.cmu.edu",
     description="Gower's Method for creating Latent Graphs from Multi-Modal Data",
