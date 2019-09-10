@@ -23,6 +23,6 @@ setuptools.setup(
         'numpy>=1.15.4',
         'python-louvain>=0.11',
         'pandas>=0.23.4',
-        'sklearn>=0.1'
+        'scikit-learn>=0.1'
     ]
 )
