@@ -37,8 +37,9 @@ class thermodynamic_measures:
         return 1- 1/N - (1/(N**2))*np.sum(degree_term)
     
     def exact_entropy(G):
+        G= np.array(G)
         N= G.shape[0]
-        D= np.count_nonzero(G, axis=1)*np.eye(N)
+        D= np.sum(G, axis=1)*np.eye(N)
         D_inv = np.nan_to_num(np.power(np.count_nonzero(G,axis=1),-0.5)*np.eye(N))
         L = np.nan_to_num(np.matmul(D_inv,np.matmul(D-G, D_inv)))
         eigenvalues = np.real(np.linalg.eig(L)[0])
@@ -47,13 +48,16 @@ class thermodynamic_measures:
         return -1* np.sum(np.nan_to_num(np.multiply(eigenvalues/N, np.log(eigenvalues/N))))
     
     def internal_energy(G):
+        G= np.array(G)
         N = G.shape[0]
         degree = np.count_nonzero(G, axis=1)
         return np.sum(np.multiply(N, degree))
     
     def temperature(G_1,G_2):
-        T_inv = (thermodynamic_metrics.approx_entropy(G_2) - thermodynamic_metrics.approx_entropy(G_1))/ \
-        (thermodynamic_metrics.internal_energy(G_2) - thermodynamic_metrics.internal_energy(G_1))
+        G_1= np.array(G_1)
+        G_2= np.array(G_2)
+        T_inv = (thermodynamic_measures.approx_entropy(G_2) - thermodynamic_measures.approx_entropy(G_1))/ \
+        (thermodynamic_measures.internal_energy(G_2) - thermodynamic_measures.internal_energy(G_1))
         
         return 1/T_inv
         
