@@ -7,9 +7,10 @@ license: MIT version 3
 acknowledgements: Work supported by National Science Foundation Graduate Research Fellowship (DGE 1745016).   
 """
 
-import numpy as np, networkx as nx, community
+import numpy as np, networkx as nx
 from sklearn.preprocessing import normalize
 from sklearn.neighbors import NearestNeighbors
+from sknetwork.clustering import Louvain, modularity
 
 class graph_computation:
     """Core class that handles simialrity calculations and graph learning
@@ -47,11 +48,11 @@ class graph_computation:
     """
     
     def __init__(self, gowers_scheme, construction_method, 
-                 WCG_epsilon, knn_symmetrize, network_enhancement, enhancement_iterations, 
+                 WCG_epsilon, knn_graph_type, network_enhancement, enhancement_iterations, 
                  enhancement_alpha, enhancement_nearest_neighbors):
         self.gowers_scheme = gowers_scheme
         self.epsilon = WCG_epsilon
-        self.symmetrize = knn_symmetrize
+        self.graph_type = knn_graph_type
         self.construction_method = construction_method
         self.network_enhancement = network_enhancement
         self.T = enhancement_iterations
@@ -182,18 +183,17 @@ class graph_computation:
         for n in range(1, np.int(np.floor(np.log2(distances.shape[0])))):
             k = 2**n
             nbrs = NearestNeighbors(n_neighbors=k, metric='precomputed').fit(distances)
-            adjacency = nbrs.kneighbors_graph(distances)
-            if self.symmetrize:
-                adjacency = adjacency.minimum(adjacency.T)
-            else:
-                adjacency = adjacency.maximum(adjacency.T)
-            network = nx.from_scipy_sparse_matrix(adjacency)
+            kNN = nbrs.kneighbors_graph(distances)
+            if self.graph_type == 'symmetric':
+                kNN = kNN.minimum(kNN.T)
+            elif self.graph_type=='assymetric':
+                kNN = kNN.maximum(kNN.T)
+            network = nx.from_scipy_sparse_matrix(kNN)
+            current_clusters, avg_modularity = self._get_partition_and_modularity(kNN)
             S = network.number_of_nodes()
             p = nx.density(network)
-            
-            current_clusters = community.best_partition(network)
             random_modularity = (1-2/np.sqrt(S))*(2/(p*S))**(2/3)
-            current_modularity = community.modularity(current_clusters, network) - random_modularity
+            current_modularity = avg_modularity - random_modularity
 
             if current_modularity > best_modularity:
                 best_modularity = current_modularity
@@ -202,6 +202,14 @@ class graph_computation:
 
         print("The modularity of the best learned graph was: {}, at a k-value of: {}".format(best_modularity, best_k))
         return nx.to_numpy_array(best_network)
+    
+    def _get_partition_and_modularity(self, kNN):
+        cluster_iterations = [Louvain()]*10
+        parts = [clstr.fit(kNN).labels_ for clstr in cluster_iterations]
+        modularities = [modularity(kNN, part) for part in parts]
+        best_part = parts[np.argmax(modularities)]
+        avg_modularity = np.mean(modularities)
+        return best_part, avg_modularity
     
     
     def _network_enhancement(self, full_graph):

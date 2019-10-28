@@ -7,7 +7,8 @@ license: MIT version 3
 acknowledgements: Work supported by National Science Foundation Graduate Research Fellowship (DGE 1745016).   
 """
 
-import pandas as pd, networkx as nx, community
+import pandas as pd, networkx as nx
+from sknetwork.clustering import Louvain, modularity
 from Gowers_Method.data_operations import data_operations
 from Gowers_Method.graph_computation import graph_computation
 
@@ -51,15 +52,15 @@ class latent_graph:
     return_data_matrix()
         returns the loaded-in data
     subgroup()
-        Returns result of Python implementation of Undirected Louvain Method for Clustering Networks
+        Returns result of Python implementation of Louvain Method for Clustering Networks
     """
     
     def __init__(self, gowers_scheme='entropy', construction_method='modularity', 
-                 WCG_epsilon =0.1, knn_symmetrize= False, network_enhancement=True, enhancement_iterations=100, 
+                 WCG_epsilon =0.1, knn_graph_type='assymmetric', network_enhancement=True, enhancement_iterations=100, 
                  enhancement_alpha=0.9, enhancement_nearest_neighbors='sqrt'):
         self.gowers_scheme = gowers_scheme
         self.epsilon = WCG_epsilon
-        self.symmetrize = knn_symmetrize
+        self.graph_type = knn_graph_type
         self.construction_method = construction_method
         self.network_enhancement = network_enhancement
         self.T = enhancement_iterations
@@ -187,7 +188,7 @@ class latent_graph:
         """
         
         computation = graph_computation(self.gowers_scheme, self.construction_method, 
-                                        self.epsilon, self.symmetrize, 
+                                        self.epsilon, self.graph_type, 
                                         self.network_enhancement, self.T, self.alpha, 
                                         self.nearest_neighbors)        
         if self.network == None:
@@ -210,8 +211,8 @@ class latent_graph:
         subgroups : pandas dataframe
             subgroup assignments of all of the nodes, based upon the found latent network
         """
-        G = nx.from_pandas_adjacency(self.network)
-        subgroups = community.best_partition(G)
+        clstr = Louvain()
+        subgroups = clstr.fit(self.network).labels_
         return pd.DataFrame.from_dict(subgroups, orient='index')
         
     def return_affinity_matrix(self):
