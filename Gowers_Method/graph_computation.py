@@ -212,32 +212,35 @@ class graph_computation:
         return best_part, avg_modularity
     
     
-    def _network_enhancement(self, full_graph):
+    def _network_enhancement(self, full_graph, alpha=0.9):
+        
         if self.nearest_neighbors == 'sqrt':
             nearest_neighbors = int(np.ceil(np.sqrt(full_graph.shape[0])))
         else:
             nearest_neighbors = self.nearest_neighbors
 
-        Q = normalize(full_graph, norm='l1', axis=1, copy=False)
-        N = Q.shape[0]
+        D = np.diag(np.array(np.sqrt(np.sum(full_graph, axis=1))).ravel())
+        N = full_graph.shape[0]
+        Q = self._DSM(full_graph)
         idxs = np.flip(np.argsort(Q, axis=1), axis=1)[:,1:nearest_neighbors+1]
         graph = np.zeros((N,N))
         graph[np.arange(N)[:,None], idxs] = Q[np.arange(N)[:,None], idxs]
-        graph = normalize(graph, norm='l1', axis=1, copy=False)
+        self.kernel_graph = self._DSM(graph)
         
-        dsm = np.zeros((N,N))
-        col_sums= np.sum(graph, axis=0)
-        for i in range(graph.shape[0]):
-            for j in range(graph.shape[1]):
-                dsm[i,j] = np.sum(np.divide((graph[i,:] * graph[j,:]), col_sums,
-                   out = np.zeros_like(col_sums), where=col_sums!=0))
                 
         for t in range(self.T+1):
-            Q = self.alpha*np.matmul(np.matmul(dsm, Q), dsm.T) + (1-self.alpha)*dsm
-        np.fill_diagonal(Q, 0)
-        Q[Q<np.mean(Q)] = 0
-        
-        return Q
+            Q = alpha*(self.kernel_graph @ Q @ self.kernel_graph) + (1-alpha)*self.kernel_graph
+            
+        np.fill_diagonal(Q,0)
+        Q = D @ Q @ D
+        return Q  
+    
+    
+    def _DSM(self, graph):
+        graph = normalize(graph, norm='l1', axis=1, copy=False)
+        col_sums= np.sum(graph, axis=0)
+        temp_graph = np.divide(graph, col_sums**0.5, out=np.zeros_like(graph), where=col_sums!=0)
+        return temp_graph @ temp_graph.T
         
         
         
