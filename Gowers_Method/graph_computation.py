@@ -204,7 +204,7 @@ class graph_computation:
         return nx.to_numpy_array(best_network)
     
     def _get_partition_and_modularity(self, kNN):
-        cluster_iterations = [Louvain()]*10
+        cluster_iterations = [Louvain(random_state=int(rand_state), shuffle_nodes=True) for rand_state in np.random.randint(1,high=100000,size=10)]
         parts = [clstr.fit(kNN).labels_ for clstr in cluster_iterations]
         modularities = [modularity(kNN, part) for part in parts]
         best_part = parts[np.argmax(modularities)]
